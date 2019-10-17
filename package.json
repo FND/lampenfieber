@@ -1,0 +1,31 @@
+{
+	"name": "txtx",
+	"version": "0.0.0",
+	"description": "TBD",
+	"author": "FND",
+	"license": "Apache-2.0",
+	"homepage": "https://github.com/FND/txtx",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/FND/txtx.git"
+	},
+	"bugs": {
+		"url": "https://github.com/FND/txtx/issues"
+	},
+	"main": "index.js",
+	"scripts": {
+		"test": "npm-run-all --parallel lint test:unit",
+		"test:unit": "mocha --opts test/mocha.opts test/test_*.js",
+		"lint": "eslint --cache *.js test && echo ✓"
+	},
+	"engines": {
+		"node": ">=8"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"eslint-config-fnd": "^1.8.0",
+		"mocha": "^6.2.1",
+		"npm-run-all": "^4.1.5",
+		"release-util-fnd": "^1.1.1"
+	}
+}
