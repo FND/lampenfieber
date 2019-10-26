@@ -1,68 +1,47 @@
 "use strict";
 
-let EventEmitter = require("events");
-let fs = require("fs");
-let readline = require("readline");
+let DELIMITER = "```";
 
-let SEP = "```";
+module.exports = function txtParse(content, { delimiter = DELIMITER } = {}) {
+	if(!content.pop) {
+		content = content.split(/\r?\n|\r/);
+	}
 
-module.exports = txtParse;
-
-txtParse.sync = filepath => new Promise(resolve => {
 	let segments = [];
-	txtParse(filepath).on("segment", segment => {
-		segments.push(segment);
-	}).on("end", () => {
-		resolve(segments);
-	});
-});
-
-function txtParse(filepath) {
-	let rl = readline.createInterface({
-		input: fs.createReadStream(filepath),
-		crlfDelay: Infinity
-	});
-	let emitter = new EventEmitter();
-
-	let block;
-	let lines = [];
-	let report = () => {
-		if(lines.length) {
-			emitter.emit("segment", lines.join("\n"));
+	let currentBlock;
+	let buffer = [];
+	let conclude = block => {
+		if(block) {
+			currentBlock.content = buffer.join("\n");
+			segments.push(block);
+		} else if(buffer.length) { // plain text
+			segments.push(buffer.join("\n"));
 		}
+		buffer = [];
+		currentBlock = null;
 	};
-	rl.on("line", line => {
-		if(block && line === SEP) { // end block
-			block.content = lines.join("\n");
-			emitter.emit("segment", block);
-			block = false;
-			lines = [];
+	content.forEach(line => {
+		if(currentBlock && line === delimiter) { // end of block
+			conclude(currentBlock);
 			return;
 		}
+		if(!currentBlock && line.startsWith(delimiter)) { // start of block
+			conclude();
 
-		if(!block && line.startsWith(SEP)) { // start block
-			report();
-
-			line = line.substr(SEP.length);
-			block = parseBlockDeclaration(line);
-			lines = [];
+			line = line.substr(delimiter.length);
+			currentBlock = parseBlockDeclaration(line);
 			return;
 		}
-
-		lines.push(line);
+		buffer.push(line);
 	});
-
-	rl.on("close", () => {
-		report();
-		emitter.emit("end");
-	});
-	return emitter;
-}
+	conclude();
+	return segments;
+};
 
 function parseBlockDeclaration(line) {
-	let parts = line.split(" ");
+	let parts = line.split(" "); // XXX: prohibits spaces in values
 	return {
-		type: parts[0],
+		type: parts[0] || null,
 		params: parts.slice(1).reduce((memo, part) => {
 			part = part.trim();
 			let i = part.indexOf("=");

@@ -2,47 +2,117 @@
 "use strict";
 
 let txtParse = require("..");
+let fs = require("fs");
 let path = require("path");
+let { promisify } = require("util");
 let { deepStrictEqual: assertDeep } = require("assert");
+
+let readFile = promisify(fs.readFile);
 
 suite("parsing");
 
 let FIXTURE = path.resolve(__dirname, "sample.mdx");
-let EXPECTED = [
-	"lorem ipsum\ndolor sit amet\n",
-	{
-		type: "javascript",
-		params: {},
-		content: "function Card() {\n    // …\n}"
-	},
-	"\nconsectetur adipisicing elit, sed do eiusmod tempor\n" +
-			"incididunt ut labore et dolore magna aliqua\n\n" +
-			"* foo\n* bar\n* baz\n",
-	{
-		type: "jsx",
-		params: {
-			pragma: "createElement",
-			max: 9,
-			fancy: true
-		},
-		content: "<Card>\n    <p>hello world</p>\n</Card>"
-	},
-	"\nut enim ad minim veniam, quis nostrud exercitation ullamco laboris"
-];
 
-test("emitter", done => {
-	let segments = [];
-	txtParse(FIXTURE).on("segment", segment => {
-		segments.push(segment);
-	}).on("end", () => {
-		assertDeep(segments, EXPECTED);
-		done();
-	});
+test("plain text", () => {
+	let content = "lorem ipsum";
+	assertDeep(txtParse(content), ["lorem ipsum"]);
+
+	content = "lorem ipsum\ndolor sit amet";
+	assertDeep(txtParse(content), ["lorem ipsum\ndolor sit amet"]);
+
+	// line endings normalized for internal simplicity
+	content = "lorem\nipsum\rdolor\r\nsit\n\ramet";
+	assertDeep(txtParse(content), ["lorem\nipsum\ndolor\nsit\n\namet"]);
 });
 
-test("convenience wrapper", () => {
-	return txtParse.sync(FIXTURE).
+test("blocks", () => {
+	let content = `
+\`\`\`
+foo
+bar
+\`\`\`
+
+dolor sit amet
+	`.trim();
+	let expected = [
+		{
+			type: null,
+			params: {},
+			content: "foo\nbar"
+		},
+		"\ndolor sit amet"
+	];
+	assertDeep(txtParse(content), expected);
+
+	content = `
+lorem ipsum
+
+${content}
+	`.trim();
+	expected.unshift("lorem ipsum\n");
+	assertDeep(txtParse(content), expected);
+});
+
+test("block parameters", () => {
+	let content = `
+\`\`\`list id=123 title=HelloWorld
+foo
+bar
+\`\`\`
+
+dolor sit amet
+	`.trim();
+	let expected = [
+		{
+			type: "list",
+			params: {
+				id: 123,
+				title: "HelloWorld"
+			},
+			content: "foo\nbar"
+		},
+		"\ndolor sit amet"
+	];
+	assertDeep(txtParse(content), expected);
+
+	content = `
+lorem ipsum
+
+${content}
+	`.trim();
+	expected.unshift("lorem ipsum\n");
+	assertDeep(txtParse(content), expected);
+});
+
+test("comprehensive composition", () => {
+	return readFile(FIXTURE, "utf8").
+		then(content => txtParse(content)).
 		then(segments => {
-			assertDeep(segments, EXPECTED);
+			assertDeep(segments, require("./sample_expected.js"));
 		});
+});
+
+test("custom delimiter", () => {
+	let content = `
+lorem ipsum
+
+~list id=123
+foo
+bar
+~
+
+dolor sit amet
+	`.trim();
+	let expected = [
+		"lorem ipsum\n",
+		{
+			type: "list",
+			params: {
+				id: 123
+			},
+			content: "foo\nbar"
+		},
+		"\ndolor sit amet"
+	];
+	assertDeep(txtParse(content, { delimiter: "~" }), expected);
 });
