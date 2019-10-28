@@ -1,6 +1,8 @@
 "use strict";
 
 let DELIMITER = "```";
+let TOKEN = `~~${Math.random().toString().substr(2)}~~`;
+let TOKEN_PATTERN = new RegExp(TOKEN, "g");
 
 module.exports = function txtParse(content, { delimiter = DELIMITER } = {}) {
 	if(!content.pop) {
@@ -39,7 +41,12 @@ module.exports = function txtParse(content, { delimiter = DELIMITER } = {}) {
 };
 
 function parseBlockDeclaration(line) {
-	let parts = line.split(" "); // XXX: prohibits spaces in values
+	// replace spaces in quoted values before splitting, discarding quotation marks
+	let parts = line.replace(/(="[^"]*")/g, match => {
+		let str = match.replace(/ /g, TOKEN);
+		return str.substr(0, 1) + str.substr(2, str.length - 3);
+	}).split(" ").map(part => part.replace(TOKEN_PATTERN, " "));
+
 	return {
 		type: parts[0] || null,
 		params: parts.slice(1).reduce((memo, part) => {

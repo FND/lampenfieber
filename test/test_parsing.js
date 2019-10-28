@@ -55,7 +55,7 @@ ${content}
 
 test("block parameters", () => {
 	let content = `
-\`\`\`list id=123 title=HelloWorld
+\`\`\`list id=123 title="Hello World"
 foo
 bar
 \`\`\`
@@ -67,7 +67,7 @@ dolor sit amet
 			type: "list",
 			params: {
 				id: 123,
-				title: "HelloWorld"
+				title: "Hello World"
 			},
 			content: "foo\nbar"
 		},
