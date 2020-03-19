@@ -2,12 +2,9 @@
 "use strict";
 
 let txtParse = require("..");
-let fs = require("fs");
+let { readFile } = require("fs").promises;
 let path = require("path");
-let { promisify } = require("util");
 let { deepStrictEqual: assertDeep } = require("assert");
-
-let readFile = promisify(fs.readFile);
 
 suite("parsing");
 
@@ -84,12 +81,10 @@ ${content}
 	assertDeep(txtParse(content), expected);
 });
 
-test("comprehensive composition", () => {
-	return readFile(FIXTURE, "utf8").
-		then(content => txtParse(content)).
-		then(segments => {
-			assertDeep(segments, require("./sample_expected.js"));
-		});
+test("comprehensive composition", async () => {
+	let content = await readFile(FIXTURE, "utf8");
+	let segments = txtParse(content);
+	assertDeep(segments, require("./sample_expected.js"));
 });
 
 test("custom delimiter", () => {
