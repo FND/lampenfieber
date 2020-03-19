@@ -116,3 +116,38 @@ dolor sit amet
 	];
 	assertDeep(txtParse(content, { delimiter: "~" }), expected);
 });
+
+test("README sample", () => {
+	let content = `
+lorem ipsum
+dolor sit amet
+
+\`\`\`formula caption="mass-energy equivalence"
+E = mc^2
+\`\`\`
+
+consectetur adipisicing elit,
+sed do eiusmod tempor
+
+\`\`\`
+…
+\`\`\`
+	`.trim();
+	let expected = [
+		"lorem ipsum\ndolor sit amet\n",
+		{
+			type: "formula",
+			params: {
+				caption: "mass-energy equivalence"
+			},
+			content: "E = mc^2"
+		},
+		"\nconsectetur adipisicing elit,\nsed do eiusmod tempor\n",
+		{
+			type: null,
+			params: {},
+			content: "…"
+		}
+	];
+	assertDeep(txtParse(content), expected);
+});
