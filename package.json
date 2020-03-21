@@ -1,6 +1,6 @@
 {
 	"name": "lampenfieber",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "text parser for parameterized content blocks within text files",
 	"author": "FND",
 	"license": "Apache-2.0",
@@ -19,7 +19,7 @@
 		"lint": "eslint --cache *.js test && echo ✓"
 	},
 	"engines": {
-		"node": ">=8"
+		"node": ">=10"
 	},
 	"dependencies": {},
 	"devDependencies": {
